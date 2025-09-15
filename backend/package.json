@@ -1,5 +1,5 @@
 {
-  "name": "my-flask-video-app",
+  "name": "video-editor-api",
   "version": "1.0.0",
   "scripts": {
     "vercel-build": "bash ./scripts/build_ffmpeg.sh"
