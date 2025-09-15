@@ -42,25 +42,26 @@ def process_with_gemini(input_path: str, user_prompt: str, output_path: str,
 
     temp_files: List[str] = []
     try:
-        for i, seg in enumerate(segments):
-            fd, tmp = tempfile.mkstemp(suffix='.mp4')
+        # Create temp segments in /tmp
+        for seg in segments:
+            fd, tmp = tempfile.mkstemp(suffix='.mp4', dir="/tmp")
             os.close(fd)
             os.unlink(tmp)
-            out_path_tmp = tmp
-            create_segment(input_path, seg, out_path_tmp)
-            temp_files.append(out_path_tmp)
+            create_segment(input_path, seg, tmp)
+            temp_files.append(tmp)
 
         if not temp_files:
             raise RuntimeError("No output segments created (maybe the entire video was cut?).")
 
-        intermediate = output_path + ".intermediate.mp4"
+        # Intermediate file in /tmp
+        intermediate = os.path.join("/tmp", os.path.basename(output_path) + ".intermediate.mp4")
         concat_segments(temp_files, intermediate)
         print("Intermediate (timeline edits applied) written to", intermediate)
 
         after_stickers_path = intermediate
         if sticker_edits:
             print("Applying sticker overlays:", json.dumps(sticker_edits, indent=2))
-            tmp_with_stickers = output_path + ".withstickers.mp4"
+            tmp_with_stickers = os.path.join("/tmp", os.path.basename(output_path) + ".withstickers.mp4")
             apply_stickers_to_video(intermediate, sticker_edits, tmp_with_stickers)
             after_stickers_path = tmp_with_stickers
             try:
@@ -105,18 +106,20 @@ def process_with_manual_edits(input_path: str, edits_json_text: str, output_path
 
     temp_files: List[str] = []
     try:
-        for i, seg in enumerate(segments):
-            fd, tmp = tempfile.mkstemp(suffix='.mp4')
+        # Create temp segments in /tmp
+        for seg in segments:
+            fd, tmp = tempfile.mkstemp(suffix='.mp4', dir="/tmp")
             os.close(fd)
             os.unlink(tmp)
             create_segment(input_path, seg, tmp)
             temp_files.append(tmp)
-        intermediate = output_path + ".intermediate.mp4"
+            
+        intermediate = os.path.join("/tmp", os.path.basename(output_path) + ".intermediate.mp4")
         concat_segments(temp_files, intermediate)
 
         after_stickers_path = intermediate
         if sticker_edits:
-            tmp_with_stickers = output_path + ".withstickers.mp4"
+            tmp_with_stickers = os.path.join("/tmp", os.path.basename(output_path) + ".withstickers.mp4")
             apply_stickers_to_video(intermediate, sticker_edits, tmp_with_stickers)
             after_stickers_path = tmp_with_stickers
             try:

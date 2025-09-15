@@ -2,19 +2,68 @@
 """
 Robust helpers for ffmpeg/ffprobe usage.
 
-Replacements / improvements over the original:
+Improvements:
 - Checks that `ffprobe` is available on PATH and raises a clear FileNotFoundError with actionable guidance.
 - Validates that the input file exists before calling ffprobe.
 - Returns detailed RuntimeError when ffprobe fails, including stderr output.
 - Keeps a simple `run_cmd` helper but validates the executable is present before attempting to run.
+- Ensures subprocesses use a writable TMPDIR (defaults to /tmp) by providing helper functions:
+    - get_tmp_dir()
+    - make_tmp_file()
+    - make_tmp_dir()
 - `secs` helper unchanged except small robustness tweaks.
 """
-
 from pathlib import Path
 import shutil
 import shlex
 import subprocess
-from typing import List, Union
+import tempfile
+import os
+import re
+from typing import List, Union, Optional, Dict
+
+
+def get_tmp_dir() -> str:
+    """
+    Return a writable temporary directory for the environment.
+    Priority:
+      1) $TMPDIR (if set)
+      2) /tmp
+    Ensures the directory exists.
+    """
+    tmp = os.environ.get("TMPDIR") or "/tmp"
+    try:
+        os.makedirs(tmp, exist_ok=True)
+    except Exception:
+        # If creation fails, fall back to tempfile.gettempdir()
+        tmp = tempfile.gettempdir()
+    return tmp
+
+
+def make_tmp_file(suffix: str = "", prefix: str = "ffmpeg_", dir: Optional[str] = None) -> str:
+    """
+    Create a temporary file inside the environment's tmp dir and return its path.
+    The file descriptor is closed and the file is unlinked (so callers can safely write with
+    tools that expect to create/write a file path). This matches the pattern used elsewhere.
+    """
+    d = dir or get_tmp_dir()
+    fd, tmp_path = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=d)
+    os.close(fd)
+    # remove the empty file — caller will create/write to this path
+    try:
+        os.unlink(tmp_path)
+    except Exception:
+        # If unlink fails, we still return the path (some systems may not allow unlink)
+        pass
+    return tmp_path
+
+
+def make_tmp_dir(prefix: str = "ffmpeg_tmp_", dir: Optional[str] = None) -> str:
+    """
+    Create and return a temporary directory inside the environment's tmp dir.
+    """
+    d = dir or get_tmp_dir()
+    return tempfile.mkdtemp(prefix=prefix, dir=d)
 
 
 def _find_executable(name: str) -> str:
@@ -33,10 +82,24 @@ def _find_executable(name: str) -> str:
     )
 
 
-def run_cmd(cmd: List[str], check: bool = True):
+def _prepare_env_for_subprocess(extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+    """
+    Prepare an environment dict for subprocess calls that ensures TMPDIR is set
+    to a writable temp folder (useful for serverless platforms).
+    """
+    env = os.environ.copy()
+    env["TMPDIR"] = get_tmp_dir()
+    if extra:
+        env.update(extra)
+    return env
+
+
+def run_cmd(cmd: List[str], check: bool = True, env_extra: Optional[Dict[str, str]] = None):
     """
     Run a command (list form). Prints the command (shell-escaped) and runs subprocess.run().
     Validates that the executable exists on PATH before running to give a clearer error.
+
+    `env_extra` can be used to pass additional environment variables to the subprocess.
     """
     if not cmd:
         raise ValueError("Empty command provided to run_cmd()")
@@ -54,7 +117,8 @@ def run_cmd(cmd: List[str], check: bool = True):
             )
 
     print("RUN:", " ".join(shlex.quote(x) for x in cmd))
-    subprocess.run(cmd, check=check)
+    env = _prepare_env_for_subprocess(env_extra)
+    subprocess.run(cmd, check=check, env=env)
 
 
 def get_duration(path: str) -> float:
@@ -79,7 +143,8 @@ def get_duration(path: str) -> float:
     ]
 
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        env = _prepare_env_for_subprocess()
+        res = subprocess.run(cmd, capture_output=True, text=True, check=True, env=env)
     except subprocess.CalledProcessError as e:
         stderr = (e.stderr or e.stdout or "").strip()
         raise RuntimeError(f"ffprobe failed for '{path}': {stderr}") from e
@@ -106,6 +171,8 @@ def secs(t: Union[str, int, float]) -> float:
     s = str(t).strip()
     if not s:
         raise ValueError("Empty time string passed to secs()")
+
+    # Accept "HH:MM:SS", "MM:SS" or "SS" and also floats
     if ":" in s:
         parts = [float(p) for p in s.split(":")]
         parts = list(reversed(parts))

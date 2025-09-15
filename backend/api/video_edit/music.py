@@ -7,8 +7,7 @@ import urllib.request
 import urllib.parse
 from typing import List, Dict, Any, Optional
 
-
-from .ffmpeg_utils import run_cmd, get_duration
+from .ffmpeg_utils import run_cmd, get_duration, make_tmp_file, get_tmp_dir
 from .sticker_helpers import ensure_dirs_exist
 
 JAMENDO_CLIENT_ID = "f24ed52c"
@@ -26,14 +25,19 @@ def download_url_to_temp_audio(url: str) -> Optional[str]:
         if parsed.scheme not in ("http", "https"):
             return None
         ext = os.path.splitext(parsed.path)[1] or ".mp3"
-        fd, tmp = tempfile.mkstemp(suffix=ext)
-        os.close(fd)
+        # create a temp path in the environment tmp dir
+        tmp = make_tmp_file(suffix=ext)
+        if not tmp:
+            return None
         print(f"Downloading audio from {url} -> {tmp}")
         urllib.request.urlretrieve(url, tmp)
         if os.path.getsize(tmp) > 0:
             return tmp
         else:
-            os.remove(tmp)
+            try:
+                os.remove(tmp)
+            except Exception:
+                pass
             return None
     except Exception as e:
         print("download_url_to_temp_audio failed:", e)
@@ -122,20 +126,19 @@ def prepare_music_for_duration(music_path: str, duration: float, volume: float =
                 pass
             return False
 
-    fd, out_m4a = tempfile.mkstemp(suffix=".m4a")
-    os.close(fd)
-    if _try_encode(out_m4a, ["-c:a", "aac", "-b:a", "192k"]):
+    # Use environment tmp dir for these files
+    out_m4a = make_tmp_file(suffix=".m4a")
+    if out_m4a and _try_encode(out_m4a, ["-c:a", "aac", "-b:a", "192k"]):
         return out_m4a
 
     try:
-        if os.path.exists(out_m4a):
+        if out_m4a and os.path.exists(out_m4a):
             os.remove(out_m4a)
     except Exception:
         pass
 
-    fd2, out_mp3 = tempfile.mkstemp(suffix=".mp3")
-    os.close(fd2)
-    if _try_encode(out_mp3, ["-c:a", "libmp3lame", "-b:a", "192k"]):
+    out_mp3 = make_tmp_file(suffix=".mp3")
+    if out_mp3 and _try_encode(out_mp3, ["-c:a", "libmp3lame", "-b:a", "192k"]):
         return out_mp3
 
     for p in (out_m4a, out_mp3):
@@ -148,9 +151,18 @@ def prepare_music_for_duration(music_path: str, duration: float, volume: float =
 
 
 def has_audio(path: str) -> bool:
+    ffprobe = shutil.which("ffprobe")
     cmd = ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "default=noprint_wrappers=1:nokey=1", path]
-    res = subprocess.run(cmd, capture_output=True, text=True)
-    return bool(res.stdout.strip())
+    try:
+        # ensure subprocess uses proper TMPDIR
+        env = os.environ.copy()
+        env["TMPDIR"] = get_tmp_dir()
+        res = subprocess.run(cmd, capture_output=True, text=True, env=env)
+        return bool(res.stdout.strip())
+    except Exception:
+        # fallback: run without env
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        return bool(res.stdout.strip())
 
 
 def mix_background_music(input_video: str, music_source_path: str, out_video: str,
@@ -249,7 +261,8 @@ def mix_background_music(input_video: str, music_source_path: str, out_video: st
         run_cmd(cmd)
     finally:
         try:
-            if prepared and prepared.startswith(tempfile.gettempdir()):
+            tmpdir = get_tmp_dir()
+            if prepared and os.path.commonpath([os.path.abspath(prepared), tmpdir]) == os.path.abspath(tmpdir):
                 os.remove(prepared)
         except Exception:
             pass

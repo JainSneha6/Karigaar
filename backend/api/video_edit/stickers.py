@@ -1,8 +1,9 @@
 from typing import List, Dict, Any, Optional
+import os
 
+from .ffmpeg_utils import run_cmd, make_tmp_file, get_tmp_dir
+from .sticker_helpers import DEFAULT_STICKER_DIRS, ensure_dirs_exist, find_or_fetch_sticker_image_for_emoji, resolve_image_path
 
-from .ffmpeg_utils import run_cmd
-from .sticker_helpers import DEFAULT_STICKER_DIRS,ensure_dirs_exist,find_or_fetch_sticker_image_for_emoji,resolve_image_path
 
 def escape_drawtext_text(t: str) -> str:
     t = t.replace("\\", "\\\\")
@@ -39,23 +40,33 @@ def build_drawtext_filter(emoji: str, start: float, end: float, position: str = 
 
 def apply_stickers_to_video(input_video: str, stickers: List[Dict[str, Any]], out_video: str,
                             sticker_dirs: Optional[List[str]] = None):
+    """
+    Apply stickers (image overlays or drawtext emoji/text) to a video.
+    Downloads/uses temporary image files in the environment tmp dir and cleans them up automatically.
+    """
     if not stickers:
         run_cmd(["ffmpeg", "-y", "-i", input_video, "-c", "copy", out_video])
         return
+
     if sticker_dirs is None:
         sticker_dirs = DEFAULT_STICKER_DIRS
     ensure_dirs_exist(sticker_dirs)
 
-    # Resolve emoji -> image first
-    resolved_image_stickers = []
-    unresolved_drawtext_stickers = []
+    # Track temporary files we should delete after processing
+    tmp_dir = get_tmp_dir()
+    temp_files_to_cleanup: List[str] = []
 
+    # Resolve emoji -> image first (replace emoji content with image if found)
     for s in stickers:
         content = s.get("content", {}) or {}
         if isinstance(content, dict) and "emoji" in content and "image" not in content:
             img_path = find_or_fetch_sticker_image_for_emoji(content.get("emoji"), sticker_dirs)
             if img_path:
                 s["content"] = {"image": img_path}
+
+    # Separate resolved image stickers and drawtext stickers
+    resolved_image_stickers = []
+    unresolved_drawtext_stickers = []
 
     for s in stickers:
         content = s.get("content", {}) or {}
@@ -64,11 +75,28 @@ def apply_stickers_to_video(input_video: str, stickers: List[Dict[str, Any]], ou
             if resolved:
                 s["content"]["image"] = resolved
                 resolved_image_stickers.append(s)
+                # If the resolved image lives in tmp dir, mark it for cleanup
+                try:
+                    if os.path.commonpath([os.path.abspath(resolved), os.path.abspath(tmp_dir)]) == os.path.abspath(tmp_dir):
+                        temp_files_to_cleanup.append(resolved)
+                except Exception:
+                    # best-effort; ignore commonpath failures
+                    pass
             else:
                 unresolved_drawtext_stickers.append(s)
         else:
             unresolved_drawtext_stickers.append(s)
 
+    # Helper to cleanup tmp files
+    def _cleanup_tmp_files():
+        for p in temp_files_to_cleanup:
+            try:
+                if p and os.path.exists(p):
+                    os.remove(p)
+            except Exception:
+                pass
+
+    # If no image stickers resolved, build a drawtext-only filter chain
     if not resolved_image_stickers:
         vf_parts = []
         for s in unresolved_drawtext_stickers:
@@ -92,10 +120,14 @@ def apply_stickers_to_video(input_video: str, stickers: List[Dict[str, Any]], ou
             ]
         else:
             cmd = ["ffmpeg", "-y", "-i", input_video, "-c", "copy", out_video]
-        run_cmd(cmd)
+
+        try:
+            run_cmd(cmd)
+        finally:
+            _cleanup_tmp_files()
         return
 
-    # Build ffmpeg with multiple -i inputs and overlay chain
+    # Build ffmpeg with multiple -i inputs and overlay chain for image stickers
     cmd = ["ffmpeg", "-y", "-i", input_video]
     image_inputs = []
     for s in resolved_image_stickers:
@@ -132,7 +164,7 @@ def apply_stickers_to_video(input_video: str, stickers: List[Dict[str, Any]], ou
         last_label = out_label
         input_idx += 1
 
-    # drawtext for unresolved
+    # drawtext for unresolved drawtext stickers
     if unresolved_drawtext_stickers:
         draw_parts = []
         for s in unresolved_drawtext_stickers:
@@ -171,4 +203,8 @@ def apply_stickers_to_video(input_video: str, stickers: List[Dict[str, Any]], ou
         final_label = last_label
 
     full_cmd = cmd + ["-filter_complex", filter_complex, "-map", final_label, "-map", "0:a?", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-c:a", "aac", "-b:a", "128k", out_video]
-    run_cmd(full_cmd)
+
+    try:
+        run_cmd(full_cmd)
+    finally:
+        _cleanup_tmp_files()

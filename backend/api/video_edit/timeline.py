@@ -1,8 +1,7 @@
 import os
-import tempfile
 from typing import List, Dict, Any
 
-from .ffmpeg_utils import run_cmd
+from .ffmpeg_utils import run_cmd, make_tmp_file, get_tmp_dir
 
 
 def normalize_and_validate_edits(edits: List[Dict[str, Any]], duration: float) -> List[Dict[str, Any]]:
@@ -139,21 +138,29 @@ def create_segment(input_path: str, seg: Dict[str, Any], out_path: str):
 
 
 def concat_segments(segment_files: List[str], final_out: str):
-    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".txt") as f:
-        list_path = f.name
-        for p in segment_files:
-            f.write(f"file '{os.path.abspath(p)}'\n")
-    cmd = [
-        "ffmpeg", "-y",
-        "-f", "concat", "-safe", "0", "-i", list_path,
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "18",
-        "-c:a", "aac", "-b:a", "128k",
-        final_out
-    ]
+    """
+    Concatenate segment files into final_out using ffmpeg concat demuxer.
+    The temporary list file is created inside the environment tmp dir to be serverless-safe.
+    """
+    list_path = None
     try:
+        # create list file in tmp dir
+        list_path = make_tmp_file(suffix=".txt")
+        with open(list_path, "w", encoding="utf-8") as f:
+            for p in segment_files:
+                f.write(f"file '{os.path.abspath(p)}'\n")
+
+        cmd = [
+            "ffmpeg", "-y",
+            "-f", "concat", "-safe", "0", "-i", list_path,
+            "-c:v", "libx264", "-preset", "veryfast", "-crf", "18",
+            "-c:a", "aac", "-b:a", "128k",
+            final_out
+        ]
         run_cmd(cmd)
     finally:
         try:
-            os.remove(list_path)
+            if list_path and os.path.exists(list_path):
+                os.remove(list_path)
         except Exception:
             pass
