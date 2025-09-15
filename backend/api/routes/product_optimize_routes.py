@@ -16,7 +16,8 @@ except Exception:
 product_bp = Blueprint("product_optimize", __name__)
 
 # Environment / config
-GEMINI_API_KEY = "AIzaSyAVSGUozgbc7AQs4xEhP_-xaTGtN78HBFU"
+# IMPORTANT: prefer setting GEMINI_API_KEY as an environment variable in production.
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")  # <-- set this in env rather than hard-coding
 GEMINI_MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.0-flash")
 
 # Allowed image extensions
@@ -24,6 +25,25 @@ ALLOWED_EXT = {"png", "jpg", "jpeg", "webp", "gif"}
 
 
 # ----------------- Helpers -----------------
+def get_uploads_root():
+    """
+    Return the root folder to store uploads.
+    Priority:
+      1) current_app.config['UPLOADS_ROOT'] if available
+      2) environment variable UPLOADS_ROOT
+      3) default '/tmp/uploads'
+    """
+    # If we are in an application context, prefer app config
+    try:
+        cfg = current_app.config.get("UPLOADS_ROOT")
+        if cfg:
+            return cfg
+    except RuntimeError:
+        # no app context; fall back to env/default
+        pass
+    return os.environ.get("UPLOADS_ROOT", "/tmp/uploads")
+
+
 def call_gemini_raw(prompt: str, api_key: str, model_name: str = "gemini-2.0-flash",
                     max_output_tokens: int = 512, temperature: float = 0.0) -> str:
     """
@@ -32,6 +52,8 @@ def call_gemini_raw(prompt: str, api_key: str, model_name: str = "gemini-2.0-fla
     """
     if genai is None:
         raise RuntimeError("google.generativeai package not installed. pip install google-generativeai")
+    if not api_key:
+        raise RuntimeError("Gemini API key not provided.")
     genai.configure(api_key=api_key)
     try:
         model = genai.GenerativeModel(model_name)
@@ -103,6 +125,17 @@ def save_uploaded_images(files_list, product_images_dir):
     """
     saved = []
     errors = []
+    # ensure directory exists (caller may have created it already, but be safe)
+    try:
+        os.makedirs(product_images_dir, exist_ok=True)
+    except Exception:
+        # if mkdir fails, log and return error
+        try:
+            current_app.logger.exception("Failed to create images directory")
+        except Exception:
+            pass
+        return saved, ["mkdir_failed"]
+
     for f in files_list:
         if not f:
             continue
@@ -119,8 +152,11 @@ def save_uploaded_images(files_list, product_images_dir):
         try:
             f.save(out_path)
             saved.append(unique_name)
-        except Exception as e:
-            current_app.logger.exception("Failed saving uploaded image")
+        except Exception:
+            try:
+                current_app.logger.exception("Failed saving uploaded image")
+            except Exception:
+                pass
             errors.append(f"save_error:{filename}")
     return saved, errors
 
@@ -158,9 +194,13 @@ def optimize_product():
         images = request.files.getlist("images")
         # create product id
         product_id = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S") + "-" + uuid.uuid4().hex[:6]
-        uploads_root = os.path.join(current_app.root_path, "uploads", "products")
+
+        # Use the configured uploads root (defaults to /tmp/uploads)
+        uploads_root = os.path.join(get_uploads_root(), "products")
         product_dir = os.path.join(uploads_root, product_id)
         images_dir = os.path.join(product_dir, "images")
+
+        # create directories (in /tmp or configured path)
         os.makedirs(images_dir, exist_ok=True)
 
         # Save images
@@ -203,13 +243,19 @@ def optimize_product():
         gemini_result_text = ""
         parsed = {}
         if not GEMINI_API_KEY:
-            current_app.logger.warning("GEMINI_API_KEY not set; cannot call Gemini")
+            try:
+                current_app.logger.warning("GEMINI_API_KEY not set; cannot call Gemini")
+            except Exception:
+                pass
         else:
             try:
                 gemini_result_text = call_gemini_raw(prompt=prompt, api_key=GEMINI_API_KEY, model_name=GEMINI_MODEL_NAME, max_output_tokens=512, temperature=0.0)
                 parsed = extract_json_from_text(gemini_result_text or "")
             except Exception:
-                current_app.logger.exception("Gemini call failed")
+                try:
+                    current_app.logger.exception("Gemini call failed")
+                except Exception:
+                    pass
                 parsed = {}
 
         # If parsed empty, fallback heuristics
@@ -269,14 +315,17 @@ def optimize_product():
             "created_at": datetime.datetime.utcnow().isoformat() + "Z",
         }
 
-        # Save JSON to disk
-        os.makedirs(product_dir, exist_ok=True)
-        out_json_path = os.path.join(product_dir, "optimized.json")
+        # Save JSON to disk (under /tmp or configured uploads root)
         try:
+            os.makedirs(product_dir, exist_ok=True)
+            out_json_path = os.path.join(product_dir, "optimized.json")
             with open(out_json_path, "w", encoding="utf-8") as f:
                 json.dump(final_obj, f, ensure_ascii=False, indent=2)
         except Exception:
-            current_app.logger.exception("Failed to write optimized JSON")
+            try:
+                current_app.logger.exception("Failed to write optimized JSON")
+            except Exception:
+                pass
 
         # Build image-accessible URLs based on current request (so frontend can show uploaded images)
         base = request.url_root.rstrip("/")
@@ -303,7 +352,10 @@ def optimize_product():
         return jsonify(response), 200
 
     except Exception as exc:
-        current_app.logger.exception("Unhandled exception in optimize_product")
+        try:
+            current_app.logger.exception("Unhandled exception in optimize_product")
+        except Exception:
+            pass
         return jsonify({"error": "internal_server_error", "detail": str(exc), "trace": traceback.format_exc()}), 500
 
 
@@ -313,7 +365,7 @@ def serve_optimized_json(product_id):
     Returns the saved optimized JSON for a product_id.
     """
     try:
-        product_dir = os.path.join(current_app.root_path, "uploads", "products", product_id)
+        product_dir = os.path.join(get_uploads_root(), "products", product_id)
         json_path = os.path.join(product_dir, "optimized.json")
         if not os.path.exists(json_path):
             return jsonify({"error": "not_found"}), 404
@@ -321,7 +373,10 @@ def serve_optimized_json(product_id):
             data = json.load(f)
         return jsonify(data)
     except Exception:
-        current_app.logger.exception("Failed to read optimized JSON")
+        try:
+            current_app.logger.exception("Failed to read optimized JSON")
+        except Exception:
+            pass
         return jsonify({"error": "failed_to_read"}), 500
 
 
@@ -332,11 +387,15 @@ def serve_product_image(product_id, filename):
     """
     try:
         safe_fn = secure_filename(filename)
-        images_dir = os.path.join(current_app.root_path, "uploads", "products", product_id, "images")
+        images_dir = os.path.join(get_uploads_root(), "products", product_id, "images")
         full_path = os.path.join(images_dir, safe_fn)
         if not os.path.exists(full_path):
             return jsonify({"error": "image_not_found"}), 404
+        # send_from_directory works fine for /tmp paths as well
         return send_from_directory(images_dir, safe_fn)
     except Exception:
-        current_app.logger.exception("Failed to serve product image")
+        try:
+            current_app.logger.exception("Failed to serve product image")
+        except Exception:
+            pass
         return jsonify({"error": "failed_to_serve"}), 500
