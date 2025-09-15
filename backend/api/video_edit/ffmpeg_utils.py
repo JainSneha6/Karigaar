@@ -1,14 +1,17 @@
+# ffmpeg_utils.py
 """
-Robust helpers for ffmpeg/ffprobe usage using imageio-ffmpeg.
+Robust helpers for ffmpeg/ffprobe usage.
 
-Behavior:
-- Uses imageio-ffmpeg's get_ffmpeg_exe() to obtain a bundled ffmpeg binary.
-- Attempts to locate ffprobe in the same directory as ffmpeg, via PATH,
-  or via IMAGEIO_FFPROBE_EXE if set.
-- Provides clear FileNotFoundError messages with actionable guidance.
-- Validates absolute executable paths before running.
-- Ensures subprocesses use a writable TMPDIR (defaults to /tmp).
-- Small helpers: get_tmp_dir(), make_tmp_file(), make_tmp_dir(), secs().
+Improvements:
+- Checks that `ffprobe` is available on PATH and raises a clear FileNotFoundError with actionable guidance.
+- Validates that the input file exists before calling ffprobe.
+- Returns detailed RuntimeError when ffprobe fails, including stderr output.
+- Keeps a simple `run_cmd` helper but validates the executable is present before attempting to run.
+- Ensures subprocesses use a writable TMPDIR (defaults to /tmp) by providing helper functions:
+    - get_tmp_dir()
+    - make_tmp_file()
+    - make_tmp_dir()
+- `secs` helper unchanged except small robustness tweaks.
 """
 from pathlib import Path
 import shutil
@@ -18,9 +21,6 @@ import tempfile
 import os
 import re
 from typing import List, Union, Optional, Dict
-
-# imageio-ffmpeg provides get_ffmpeg_exe()
-import imageio_ffmpeg
 
 
 def get_tmp_dir() -> str:
@@ -44,7 +44,7 @@ def make_tmp_file(suffix: str = "", prefix: str = "ffmpeg_", dir: Optional[str] 
     """
     Create a temporary file inside the environment's tmp dir and return its path.
     The file descriptor is closed and the file is unlinked (so callers can safely write with
-    tools that expect to create/write a file path).
+    tools that expect to create/write a file path). This matches the pattern used elsewhere.
     """
     d = dir or get_tmp_dir()
     fd, tmp_path = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=d)
@@ -65,77 +65,64 @@ def make_tmp_dir(prefix: str = "ffmpeg_tmp_", dir: Optional[str] = None) -> str:
     d = dir or get_tmp_dir()
     return tempfile.mkdtemp(prefix=prefix, dir=d)
 
+def _download_binary(name: str) -> str:
+    """
+    Download ffmpeg/ffprobe from GitHub Releases into /tmp/bin if not already present.
+    """
+    BIN_DIR = "/tmp/bin"
+    os.makedirs(BIN_DIR, exist_ok=True)
+    target_path = os.path.join(BIN_DIR, name)
+
+    if os.path.exists(target_path) and os.access(target_path, os.X_OK):
+        return target_path
+
+    urls = {
+        "ffprobe": "https://github.com/JainSneha6/Karigaar/releases/download/ffprobe/ffprobe",
+        "ffmpeg": "https://github.com/JainSneha6/Karigaar/releases/download/ffmpeg/ffmpeg",
+    }
+
+    url = urls.get(name)
+    if not url:
+        raise FileNotFoundError(f"No download URL configured for {name}")
+
+    import urllib.request
+    print(f"Downloading {name} from {url} ...")
+    urllib.request.urlretrieve(url, target_path)
+    os.chmod(target_path, 0o755)  # make executable
+    return target_path
+
 
 def _find_executable(name: str) -> str:
     """
-    Return a path to the ffmpeg/ffprobe executable.
-
-    Strategy:
-      - If IMAGEIO_FFMPEG_EXE / IMAGEIO_FFPROBE_EXE env var set and points to executable, use it.
-      - For ffmpeg: use imageio-ffmpeg.get_ffmpeg_exe()
-      - For ffprobe: try same directory as ffmpeg, then shutil.which('ffprobe'), then raise.
-
-    Raises FileNotFoundError with actionable guidance if not found.
+    Find an ffmpeg/ffprobe executable, falling back to GitHub release download.
     """
-    if name not in ("ffmpeg", "ffprobe"):
-        raise FileNotFoundError(f"Unknown executable requested: {name}")
-
-    # explicit environment overrides
-    if name == "ffmpeg":
-        env_exe = os.environ.get("IMAGEIO_FFMPEG_EXE")
-        if env_exe:
-            p = Path(env_exe)
-            if p.exists() and os.access(p, os.X_OK):
-                return str(p)
-            raise FileNotFoundError(f"IMAGEIO_FFMPEG_EXE is set but not executable: {env_exe}")
-
-        # Use imageio-ffmpeg's bundled ffmpeg (preferred on serverless)
-        try:
-            ff = imageio_ffmpeg.get_ffmpeg_exe()
-        except Exception as e:
-            raise FileNotFoundError(
-                "Could not locate ffmpeg via imageio-ffmpeg. Install imageio-ffmpeg "
-                "(`pip install imageio-ffmpeg`) or set IMAGEIO_FFMPEG_EXE to a valid ffmpeg binary."
-            ) from e
-
-        if not Path(ff).exists() or not os.access(ff, os.X_OK):
-            raise FileNotFoundError(f"ffmpeg executable not found or not executable: {ff}")
-
-        return str(ff)
-
-    # name == "ffprobe"
-    env_exe = os.environ.get("IMAGEIO_FFPROBE_EXE")
-    if env_exe:
-        p = Path(env_exe)
-        if p.exists() and os.access(p, os.X_OK):
-            return str(p)
-        raise FileNotFoundError(f"IMAGEIO_FFPROBE_EXE is set but not executable: {env_exe}")
-
-    # Try to find ffprobe next to the ffmpeg binary (common in bundled distributions)
-    try:
-        ffexe = imageio_ffmpeg.get_ffmpeg_exe()
-    except Exception:
-        ffexe = None
-
-    if ffexe:
-        candidate = Path(ffexe).resolve().parent / "ffprobe"
+    ffmpeg_binary = os.environ.get("FFMPEG_BINARY")
+    if ffmpeg_binary:
+        candidate = Path(ffmpeg_binary)
         if candidate.exists() and os.access(candidate, os.X_OK):
             return str(candidate)
 
-    # Fall back to PATH
-    path_exec = shutil.which("ffprobe")
+    ffmpeg_bin_dir = os.environ.get("FFMPEG_BIN_DIR") or ".vercel_build_output/bin"
+    if ffmpeg_bin_dir:
+        candidate = Path(ffmpeg_bin_dir) / name
+        if candidate.exists() and os.access(candidate, os.X_OK):
+            return str(candidate)
+
+    module_bin = Path(__file__).resolve().parent / "bin" / name
+    if module_bin.exists() and os.access(module_bin, os.X_OK):
+        return str(module_bin)
+
+    for p in ("/opt/bin", "/usr/local/bin", "/usr/bin", "/bin"):
+        candidate = Path(p) / name
+        if candidate.exists() and os.access(candidate, os.X_OK):
+            return str(candidate)
+
+    path_exec = shutil.which(name)
     if path_exec:
         return path_exec
 
-    # Not found — provide actionable guidance
-    raise FileNotFoundError(
-        "ffprobe executable not found. Try one of:\n"
-        " - Install imageio-ffmpeg (pip install imageio-ffmpeg) which often bundles ffmpeg; "
-        "ffprobe may be included alongside it.\n"
-        " - Install ffmpeg/ffprobe on the system so ffprobe is on PATH (see https://ffmpeg.org/download.html).\n"
-        " - Or set IMAGEIO_FFPROBE_EXE to the full path of a ffprobe binary."
-    )
-
+    # Last resort: download from GitHub
+    return _download_binary(name)
 
 def _prepare_env_for_subprocess(extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
     """
@@ -150,30 +137,21 @@ def _prepare_env_for_subprocess(extra: Optional[Dict[str, str]] = None) -> Dict[
 
 
 def run_cmd(cmd: List[str], check: bool = True, env_extra: Optional[Dict[str, str]] = None):
-    """
-    Run a command (list form). Prints the command (shell-escaped) and runs subprocess.run().
-    Validates that the executable exists before running to give a clearer error.
-
-    `env_extra` can be used to pass additional environment variables to the subprocess.
-    """
     if not cmd:
         raise ValueError("Empty command provided to run_cmd()")
-
     exe = cmd[0]
 
-    # If exe is an absolute path, ensure it exists and is executable
-    exe_path = Path(exe)
-    if exe_path.is_absolute():
-        if not (exe_path.exists() and os.access(str(exe_path), os.X_OK)):
-            raise FileNotFoundError(f"Executable '{exe}' not found or not executable.")
-    else:
-        # If it's not absolute, ensure it's on PATH
-        if shutil.which(exe) is None:
+    # If it's a bare name, try to resolve it to an absolute executable path.
+    if not Path(exe).is_absolute():
+        try:
+            exe = _find_executable(exe)
+        except FileNotFoundError:
             raise FileNotFoundError(
-                f"Executable '{exe}' not found in PATH. Install it or provide a full path.\n"
-                "If this is ffmpeg/ffprobe, consider installing 'imageio-ffmpeg' or setting "
-                "IMAGEIO_FFMPEG_EXE / IMAGEIO_FFPROBE_EXE environment variables."
-            )
+                f"Executable '{cmd[0]}' not found in PATH. Install it or provide a full path.\n"
+                "If this is ffmpeg/ffprobe, see: https://ffmpeg.org/download.html"
+            ) from None
+
+    cmd = [exe] + cmd[1:]
 
     print("RUN:", " ".join(shlex.quote(x) for x in cmd))
     env = _prepare_env_for_subprocess(env_extra)
@@ -208,7 +186,7 @@ def get_duration(path: str) -> float:
         stderr = (e.stderr or e.stdout or "").strip()
         raise RuntimeError(f"ffprobe failed for '{path}': {stderr}") from e
     except FileNotFoundError:
-        # In case ffprobe path got removed between the which/check and call
+        # In case ffprobe path got removed between the which check and call
         raise FileNotFoundError(f"ffprobe executable not found when attempting to run: {ffprobe}")
 
     out = (res.stdout or "").strip()
