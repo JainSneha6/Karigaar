@@ -1,8 +1,7 @@
 {
   "functions": {
     "api/*.py": {
-      "runtime": "@vercel/python@5.0.0",
-      "includeFiles": ".vercel_build_output/bin/**"
+      "runtime": "@vercel/python@5.0.0"
     }
   },
   "routes": [
@@ -10,5 +9,6 @@
       "src": "/(.*)",
       "dest": "/api/app.py"
     }
-  ]
+  ],
+  "buildCommand": "bash ./scripts/install_ffmpeg.sh && pip install -r requirements.txt"
 }
