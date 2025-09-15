@@ -8,7 +8,7 @@ TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 
 echo "Downloading static ffmpeg build..."
-curl -k -L "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz" -o "$TMPDIR/ffmpeg.tar.xz"
+curl -L "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz" -o "$TMPDIR/ffmpeg.tar.xz"
 
 tar -xJf "$TMPDIR/ffmpeg.tar.xz" -C "$TMPDIR"
 
