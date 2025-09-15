@@ -6,3 +6,4 @@ gunicorn==23.0.0
 ffmpeg-python==0.2.0
 typing-extensions==4.12.2
 google-generativeai==0.7.2
+imageio[ffmpeg]==3.12.0
