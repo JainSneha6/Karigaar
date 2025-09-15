@@ -10,5 +10,6 @@
       "dest": "/api/app.py"
     }
   ],
-  "buildCommand": "bash ./scripts/build_ffmpeg.sh"
+  "buildCommand": "./scripts/build_ffmpeg.sh",
+  "outputDirectory": "."
 }
