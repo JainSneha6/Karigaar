@@ -65,62 +65,64 @@ def make_tmp_dir(prefix: str = "ffmpeg_tmp_", dir: Optional[str] = None) -> str:
     d = dir or get_tmp_dir()
     return tempfile.mkdtemp(prefix=prefix, dir=d)
 
+def _download_binary(name: str) -> str:
+    """
+    Download ffmpeg/ffprobe from GitHub Releases into /tmp/bin if not already present.
+    """
+    BIN_DIR = "/tmp/bin"
+    os.makedirs(BIN_DIR, exist_ok=True)
+    target_path = os.path.join(BIN_DIR, name)
+
+    if os.path.exists(target_path) and os.access(target_path, os.X_OK):
+        return target_path
+
+    urls = {
+        "ffprobe": "https://github.com/JainSneha6/Karigaar/releases/download/ffprobe/ffprobe",
+        "ffmpeg": "https://github.com/JainSneha6/Karigaar/releases/download/ffmpeg/ffmpeg",
+    }
+
+    url = urls.get(name)
+    if not url:
+        raise FileNotFoundError(f"No download URL configured for {name}")
+
+    import urllib.request
+    print(f"Downloading {name} from {url} ...")
+    urllib.request.urlretrieve(url, target_path)
+    os.chmod(target_path, 0o755)  # make executable
+    return target_path
+
 
 def _find_executable(name: str) -> str:
     """
-    Find an ffmpeg/ffprobe executable.
-
-    Order:
-      1) Exact path via FFMPEG_BINARY (if set) -> allows overriding single executable.
-      2) Directory via FFMPEG_BIN_DIR env var (a directory that contains the binary).
-      3) Look relative to this module (e.g. ./bin shipped with package).
-      4) Common system locations (/usr/bin, /usr/local/bin, /opt/bin).
-      5) shutil.which() on PATH.
-    Raises FileNotFoundError with a helpful summary.
+    Find an ffmpeg/ffprobe executable, falling back to GitHub release download.
     """
-    # 1) Exact override for single binary (useful if you want ffmpeg vs ffprobe paths separately)
     ffmpeg_binary = os.environ.get("FFMPEG_BINARY")
     if ffmpeg_binary:
         candidate = Path(ffmpeg_binary)
         if candidate.exists() and os.access(candidate, os.X_OK):
             return str(candidate)
 
-    # 2) Directory override
     ffmpeg_bin_dir = os.environ.get("FFMPEG_BIN_DIR") or ".vercel_build_output/bin"
     if ffmpeg_bin_dir:
         candidate = Path(ffmpeg_bin_dir) / name
         if candidate.exists() and os.access(candidate, os.X_OK):
             return str(candidate)
 
-    # 3) Check a `bin` folder next to this file (packaged binaries)
     module_bin = Path(__file__).resolve().parent / "bin" / name
     if module_bin.exists() and os.access(module_bin, os.X_OK):
         return str(module_bin)
 
-    # 4) Common system locations
     for p in ("/opt/bin", "/usr/local/bin", "/usr/bin", "/bin"):
         candidate = Path(p) / name
         if candidate.exists() and os.access(candidate, os.X_OK):
             return str(candidate)
 
-    # 5) PATH lookup
     path_exec = shutil.which(name)
     if path_exec:
         return path_exec
 
-    # Nothing found — raise helpful error listing attempted places
-    raise FileNotFoundError(
-        f"'{name}' not found. Tried (in order):\n"
-        f" - FFMPEG_BINARY={ffmpeg_binary!r}\n"
-        f" - FFMPEG_BIN_DIR={ffmpeg_bin_dir!r}\n"
-        f" - packaged module bin at {str(module_bin.parent)!r}\n"
-        f" - common locations: /opt/bin, /usr/local/bin, /usr/bin, /bin\n"
-        f" - PATH lookup (shutil.which)\n\n"
-        "Please provide ffmpeg/ffprobe binaries (set FFMPEG_BINARY to an absolute path, "
-        "or FFMPEG_BIN_DIR to a directory containing them), or install ffmpeg on the host."
-    )
-
-
+    # Last resort: download from GitHub
+    return _download_binary(name)
 
 def _prepare_env_for_subprocess(extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
     """
