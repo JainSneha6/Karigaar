@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+/* Load Google Fonts (Poppins + Playfair Display) */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Playfair+Display:wght@400;600;700&display=swap');
+
+/* CSS variables for font families */
+:root {
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  --font-display: 'Playfair Display', serif;
+}
+
+/* Ensure the app uses Poppins as the default body font */
+html, body, #root {
+  height: 100%;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headline uses Playfair Display */
+.headline {
+  font-family: var(--font-display);
+  /* Slightly tighter letter spacing for a refined look */
+  letter-spacing: -0.01em;
+}
+
+/* Body and UI text use Poppins */
+.body-copy,
+.ui-text,
+.btn-text {
+  font-family: var(--font-sans);
+}
+
+/* subtle text glow used for hero headline */
+.text-glow {
+  text-shadow: 0 6px 18px rgba(99,102,241,0.08), 0 2px 6px rgba(139,92,246,0.04);
+}
+
+/* gradient headline */
+.gradient-text {
+  background: linear-gradient(90deg, #7c3aed, #ec4899, #3b82f6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Make the conversation overlay slightly nicer on small screens */
+.conversation-overlay .p-3 {
+  word-break: break-word;
+}
+
+/* Small utility: softer scrollbars */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(99,102,241,0.18);
+}

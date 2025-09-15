@@ -1,0 +1,30 @@
+{
+  "product_id": "20250913120354-0de86d",
+  "original": {
+    "description": "Water Pot",
+    "price": 100.0,
+    "currency": "INR",
+    "uploaded_images": [
+      "98ecb72b-images_2.jpeg",
+      "b4f7dbd0-images_1.jpeg",
+      "97f9cf44-images.jpeg",
+      "7990fbe0-clay-pot-372.jpg"
+    ]
+  },
+  "optimized": {
+    "suggested_name": "Handcrafted Clay Water Pot | Natural Cooling",
+    "suggested_description": "Enjoy naturally cooled, refreshing water with this handcrafted clay pot. Made using traditional methods, this earthen water pot enhances the taste and provides a healthier alternative to plastic. Perfect for home, office, or yoga studio. Embrace sustainable living with this beautiful and functional water pot. Keeps water cool without electricity!",
+    "suggested_price": 129.0,
+    "price_reasoning": "Slightly increased price to reflect the handcrafted nature, perceived health benefits, and growing consumer interest in sustainable and natural products. Clay pots also provide natural cooling, which increases the value.",
+    "seo_tags": [
+      "clay water pot",
+      "earthen water cooler",
+      "natural cooling",
+      "handcrafted pottery",
+      "sustainable living",
+      "indian water pot"
+    ],
+    "raw_gemini_text": "```json\n{\n  \"suggested_name\": \"Handcrafted Clay Water Pot | Natural Cooling\",\n  \"suggested_description\": \"Enjoy naturally cooled, refreshing water with this handcrafted clay pot. Made using traditional methods, this earthen water pot enhances the taste and provides a healthier alternative to plastic. Perfect for home, office, or yoga studio. Embrace sustainable living with this beautiful and functional water pot. Keeps water cool without electricity!\",\n  \"suggested_price\": 129.0,\n  \"price_reasoning\": \"Slightly increased price to reflect the handcrafted nature, perceived health benefits, and growing consumer interest in sustainable and natural products. Clay pots also provide natural cooling, which increases the value.\",\n  \"seo_tags\": [\n    \"clay water pot\",\n    \"earthen water cooler\",\n    \"natural cooling\",\n    \"handcrafted pottery\",\n    \"sustainable living\",\n    \"indian water pot\"\n  ]\n}\n```"
+  },
+  "created_at": "2025-09-13T12:03:57.172429Z"
+}

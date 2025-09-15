@@ -1,0 +1,30 @@
+{
+  "product_id": "20250913115559-fa4af5",
+  "original": {
+    "description": "Hot pot",
+    "price": 123.0,
+    "currency": "INR",
+    "uploaded_images": [
+      "aafcb1e2-clay-pot-372.jpg",
+      "b9f383db-images_1.jpeg.jpg",
+      "2d394896-images.jpeg.jpg",
+      "0c41d31a-images_2.jpeg.jpg"
+    ]
+  },
+  "optimized": {
+    "suggested_name": "Authentic Clay Hot Pot - Traditional Cooking",
+    "suggested_description": "Experience authentic flavors with our handcrafted clay hot pot. Perfect for slow cooking stews, soups, and traditional dishes. The natural clay retains heat evenly, enhancing flavors and providing a unique cooking experience. Durable and beautiful, this hot pot is a must-have for any kitchen. Enjoy healthy, delicious meals cooked with tradition. Order yours today!",
+    "suggested_price": 139.0,
+    "price_reasoning": "Slightly increase the price to reflect the perceived value of \"authentic\" and \"handcrafted\". Clay pots are associated with traditional cooking and premium experience.",
+    "seo_tags": [
+      "clay hot pot",
+      "traditional cooking",
+      "earthenware",
+      "Indian cuisine",
+      "slow cooking",
+      "hot pot"
+    ],
+    "raw_gemini_text": "```json\n{\n  \"suggested_name\": \"Authentic Clay Hot Pot - Traditional Cooking\",\n  \"suggested_description\": \"Experience authentic flavors with our handcrafted clay hot pot. Perfect for slow cooking stews, soups, and traditional dishes. The natural clay retains heat evenly, enhancing flavors and providing a unique cooking experience. Durable and beautiful, this hot pot is a must-have for any kitchen. Enjoy healthy, delicious meals cooked with tradition. Order yours today!\",\n  \"suggested_price\": 139.0,\n  \"price_reasoning\": \"Slightly increase the price to reflect the perceived value of \\\"authentic\\\" and \\\"handcrafted\\\". Clay pots are associated with traditional cooking and premium experience.\",\n  \"seo_tags\": [\"clay hot pot\", \"traditional cooking\", \"earthenware\", \"Indian cuisine\", \"slow cooking\", \"hot pot\"]\n}\n```"
+  },
+  "created_at": "2025-09-13T11:56:02.126753Z"
+}

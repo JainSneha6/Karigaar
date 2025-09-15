@@ -1,0 +1,30 @@
+{
+  "product_id": "20250913122204-8b1c6d",
+  "original": {
+    "description": "Hot Pot",
+    "price": 350.0,
+    "currency": "INR",
+    "uploaded_images": [
+      "96c8ed24-images_2.jpeg",
+      "275dd477-images_1.jpeg",
+      "00918571-images.jpeg",
+      "bd731d1c-clay-pot-372.jpg"
+    ]
+  },
+  "optimized": {
+    "suggested_name": "Authentic Clay Hot Pot for Delicious Meals",
+    "suggested_description": "Enjoy delicious and authentic hot pot meals at home with this handcrafted clay pot. Perfect for soups, stews, and traditional hot pot recipes. Retains heat beautifully, enhancing flavors. Durable and easy to clean. Elevate your cooking experience today! Great for individual servings or sharing.",
+    "suggested_price": 399.0,
+    "price_reasoning": "Slightly higher than the current price to reflect the perceived value of handcrafted clay and authentic cooking experience. Rounded to a psychological pricing point.",
+    "seo_tags": [
+      "clay hot pot",
+      "hot pot",
+      "earthenware pot",
+      "cooking pot",
+      "soup pot",
+      "traditional cooking"
+    ],
+    "raw_gemini_text": "```json\n{\n  \"suggested_name\": \"Authentic Clay Hot Pot for Delicious Meals\",\n  \"suggested_description\": \"Enjoy delicious and authentic hot pot meals at home with this handcrafted clay pot. Perfect for soups, stews, and traditional hot pot recipes. Retains heat beautifully, enhancing flavors. Durable and easy to clean. Elevate your cooking experience today! Great for individual servings or sharing.\",\n  \"suggested_price\": 399.0,\n  \"price_reasoning\": \"Slightly higher than the current price to reflect the perceived value of handcrafted clay and authentic cooking experience. Rounded to a psychological pricing point.\",\n  \"seo_tags\": [\"clay hot pot\", \"hot pot\", \"earthenware pot\", \"cooking pot\", \"soup pot\", \"traditional cooking\"]\n}\n```"
+  },
+  "created_at": "2025-09-13T12:22:06.890397Z"
+}

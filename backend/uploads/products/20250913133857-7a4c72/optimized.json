@@ -1,0 +1,30 @@
+{
+  "product_id": "20250913133857-7a4c72",
+  "original": {
+    "description": "Cooking",
+    "price": 350.0,
+    "currency": "INR",
+    "uploaded_images": [
+      "1863d7ff-images_2.jpeg",
+      "6ad3fc18-images_1.jpeg",
+      "0eb7d128-images.jpeg",
+      "c59bd014-clay-pot-372.jpg"
+    ]
+  },
+  "optimized": {
+    "suggested_name": "Traditional Clay Cooking Pot for Healthy Meals",
+    "suggested_description": "Experience authentic flavors with our handcrafted clay cooking pot. Perfect for slow-cooking stews, curries, and more, this pot enhances the taste of your meals naturally. Made from high-quality, durable clay, it's ideal for traditional cooking methods. Enjoy healthy, delicious, and aromatic dishes every time. Suitable for various heat sources.",
+    "suggested_price": 420.0,
+    "price_reasoning": "Slightly increase the price to reflect the value proposition of healthy cooking and handcrafted quality, while remaining competitive.",
+    "seo_tags": [
+      "clay cooking pot",
+      "traditional cookware",
+      "Indian cooking",
+      "healthy cooking",
+      "earthenware pot",
+      "clay pot"
+    ],
+    "raw_gemini_text": "```json\n{\n  \"suggested_name\": \"Traditional Clay Cooking Pot for Healthy Meals\",\n  \"suggested_description\": \"Experience authentic flavors with our handcrafted clay cooking pot. Perfect for slow-cooking stews, curries, and more, this pot enhances the taste of your meals naturally. Made from high-quality, durable clay, it's ideal for traditional cooking methods. Enjoy healthy, delicious, and aromatic dishes every time. Suitable for various heat sources.\",\n  \"suggested_price\": 420.0,\n  \"price_reasoning\": \"Slightly increase the price to reflect the value proposition of healthy cooking and handcrafted quality, while remaining competitive.\",\n  \"seo_tags\": [\"clay cooking pot\", \"traditional cookware\", \"Indian cooking\", \"healthy cooking\", \"earthenware pot\", \"clay pot\"]\n}\n```"
+  },
+  "created_at": "2025-09-13T13:38:59.974058Z"
+}
