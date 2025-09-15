@@ -10,5 +10,5 @@
       "dest": "/api/app.py"
     }
   ],
-  "buildCommand": "bash ./scripts/build_ffmpeg.sh && pip install -r requirements.txt"
+  "buildCommand": "bash ./scripts/build_ffmpeg.sh"
 }
