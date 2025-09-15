@@ -17,7 +17,7 @@ product_bp = Blueprint("product_optimize", __name__)
 
 # Environment / config
 # IMPORTANT: prefer setting GEMINI_API_KEY as an environment variable in production.
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")  # <-- set this in env rather than hard-coding
+GEMINI_API_KEY = "AIzaSyAVSGUozgbc7AQs4xEhP_-xaTGtN78HBFU"
 GEMINI_MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.0-flash")
 
 # Allowed image extensions
