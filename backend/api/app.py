@@ -1,7 +1,7 @@
 from flask import Flask
-from routes.edit_routes import edit_bp
-from routes.converse_routes import conv_bp
-from routes.product_optimize_routes import product_bp
+from .routes.edit_routes import edit_bp
+from .routes.converse_routes import conv_bp
+from .routes.product_optimize_routes import product_bp
 import os
 from flask_cors import CORS
 
