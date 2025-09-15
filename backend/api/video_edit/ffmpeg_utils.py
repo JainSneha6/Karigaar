@@ -68,17 +68,47 @@ def make_tmp_dir(prefix: str = "ffmpeg_tmp_", dir: Optional[str] = None) -> str:
 
 def _find_executable(name: str) -> str:
     """
-    Return the absolute path to an executable or raise FileNotFoundError with guidance.
+    Look for an executable (ffmpeg/ffprobe) in:
+      1) env var FFMPEG_BINARY (absolute path to the single executable)
+      2) env var FFMPEG_BIN_DIR (directory containing ffmpeg/ffprobe)
+      3) standard PATH via shutil.which()
+    Raises FileNotFoundError with guidance if not found.
     """
+    # 1) explicit single binary path
+    single = ".vercel_build_output/bin/ffprobe"
+    if single:
+        candidate = os.path.abspath(single)
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+
+    # 2) explicit bin directory
+    bin_dir = ".vercel_build_output/bin"
+    if bin_dir:
+        candidate = os.path.join(bin_dir, name)
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+        # sometimes tar extraction places files in a subdir; try glob-like variant
+        candidate2 = os.path.join(bin_dir, f"{name}")
+        if os.path.isfile(candidate2) and os.access(candidate2, os.X_OK):
+            return candidate2
+
+    # 3) PATH lookup
     p = shutil.which(name)
     if p:
         return p
+
+    # If not found, raise helpful guidance
     raise FileNotFoundError(
-        f"'{name}' not found in PATH. Please install FFmpeg (which provides {name}) and add it to your PATH.\n"
-        "On Windows: download a static build from https://ffmpeg.org/download.html and add the `bin` directory to PATH,\n"
-        "or use Chocolatey: `choco install ffmpeg -y`.\n"
-        "On macOS: `brew install ffmpeg`.\n"
-        "After installing, restart your terminal / service so PATH changes take effect."
+        f"'{name}' not found. Tried:\n"
+        f" - FFMPEG_BINARY environment variable (value: {single!r})\n"
+        f" - FFMPEG_BIN_DIR environment variable (value: {bin_dir!r})\n"
+        f" - PATH lookup (shutil.which)\n\n"
+        "Please provide ffmpeg/ffprobe binaries. Options:\n"
+        "  * Deploy to a runtime with ffmpeg installed (Cloud Run / Render / Railway / Docker).\n"
+        "  * Include static ffmpeg/ffprobe binaries in your build and set FFMPEG_BIN_DIR to that folder.\n"
+        "  * Use an external microservice that runs ffmpeg and call it from your app.\n\n"
+        "If you bundle binaries on Vercel, add a build script (example: scripts/build_ffmpeg.sh)\n"
+        "and set FFMPEG_BIN_DIR=.vercel_build_output/bin in Vercel project env vars."
     )
 
 
