@@ -67,30 +67,59 @@ def make_tmp_dir(prefix: str = "ffmpeg_tmp_", dir: Optional[str] = None) -> str:
 
 
 def _find_executable(name: str) -> str:
-    # Try FFMPEG_BINARY first (exact path)
-    bin_path = os.environ.get("FFMPEG_BINARY")
-    if bin_path and Path(bin_path).exists():
-        return bin_path
+    """
+    Find an ffmpeg/ffprobe executable.
 
-    # Try FFMPEG_BIN_DIR
-    bin_dir = ".vercel_build_output/bin"
-    if bin_dir:
-        candidate = Path(bin_dir) / name
+    Order:
+      1) Exact path via FFMPEG_BINARY (if set) -> allows overriding single executable.
+      2) Directory via FFMPEG_BIN_DIR env var (a directory that contains the binary).
+      3) Look relative to this module (e.g. ./bin shipped with package).
+      4) Common system locations (/usr/bin, /usr/local/bin, /opt/bin).
+      5) shutil.which() on PATH.
+    Raises FileNotFoundError with a helpful summary.
+    """
+    # 1) Exact override for single binary (useful if you want ffmpeg vs ffprobe paths separately)
+    ffmpeg_binary = os.environ.get("FFMPEG_BINARY")
+    if ffmpeg_binary:
+        candidate = Path(ffmpeg_binary)
         if candidate.exists() and os.access(candidate, os.X_OK):
             return str(candidate)
 
-    # Fallback to PATH
+    # 2) Directory override
+    ffmpeg_bin_dir = os.environ.get("FFMPEG_BIN_DIR") or ".vercel_build_output/bin"
+    if ffmpeg_bin_dir:
+        candidate = Path(ffmpeg_bin_dir) / name
+        if candidate.exists() and os.access(candidate, os.X_OK):
+            return str(candidate)
+
+    # 3) Check a `bin` folder next to this file (packaged binaries)
+    module_bin = Path(__file__).resolve().parent / "bin" / name
+    if module_bin.exists() and os.access(module_bin, os.X_OK):
+        return str(module_bin)
+
+    # 4) Common system locations
+    for p in ("/opt/bin", "/usr/local/bin", "/usr/bin", "/bin"):
+        candidate = Path(p) / name
+        if candidate.exists() and os.access(candidate, os.X_OK):
+            return str(candidate)
+
+    # 5) PATH lookup
     path_exec = shutil.which(name)
     if path_exec:
         return path_exec
 
+    # Nothing found — raise helpful error listing attempted places
     raise FileNotFoundError(
-        f"'{name}' not found. Tried:\n"
-        f" - FFMPEG_BINARY={bin_path!r}\n"
-        f" - FFMPEG_BIN_DIR={bin_dir!r}\n"
+        f"'{name}' not found. Tried (in order):\n"
+        f" - FFMPEG_BINARY={ffmpeg_binary!r}\n"
+        f" - FFMPEG_BIN_DIR={ffmpeg_bin_dir!r}\n"
+        f" - packaged module bin at {str(module_bin.parent)!r}\n"
+        f" - common locations: /opt/bin, /usr/local/bin, /usr/bin, /bin\n"
         f" - PATH lookup (shutil.which)\n\n"
-        "Please provide ffmpeg/ffprobe binaries."
+        "Please provide ffmpeg/ffprobe binaries (set FFMPEG_BINARY to an absolute path, "
+        "or FFMPEG_BIN_DIR to a directory containing them), or install ffmpeg on the host."
     )
+
 
 
 def _prepare_env_for_subprocess(extra: Optional[Dict[str, str]] = None) -> Dict[str, str]:
