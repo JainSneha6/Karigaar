@@ -12,7 +12,7 @@ def create_app():
     # config: optional
     app.config.from_mapping({
     "MAX_CONTENT_LENGTH": 1024 * 1024 * 1024, # 1GB max upload by default
-    "UPLOAD_FOLDER": os.path.join(app.instance_path, "uploads")
+    "UPLOAD_FOLDER": os.path.join("/tmp", "uploads"), 
     })
 
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
