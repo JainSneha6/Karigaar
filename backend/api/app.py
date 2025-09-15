@@ -16,6 +16,10 @@ def create_app():
     })
 
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+    
+    ffmpeg_bin_dir = "/tmp/bin"
+    os.makedirs(ffmpeg_bin_dir, exist_ok=True)
+    os.environ["PATH"] = ffmpeg_bin_dir + ":" + os.environ.get("PATH", "")
 
     # Register blueprints
     app.register_blueprint(edit_bp, url_prefix="/api")
