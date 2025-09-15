@@ -19,7 +19,7 @@ export default function Profile() {
       setError(null);
       try {
         const res = await fetch(
-          `http://localhost:5000/api/converse/profile_json/${encodeURIComponent(
+          `https://karigaar-xhml.vercel.app/api/converse/profile_json/${encodeURIComponent(
             effectiveSlug
           )}`
         );

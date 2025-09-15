@@ -75,7 +75,7 @@ export default function Conversational() {
     setTranscript("");
     setStatus("playing_prompt");
     try {
-      const res = await fetch("http://localhost:5000/api/converse/start_language");
+      const res = await fetch("https://karigaar-xhml.vercel.app/api/converse/start_language");
       const data = await res.json();
       if (data.audio_base64) {
         await playBase64Audio(data.audio_base64, data.mime || "audio/mpeg");
@@ -243,7 +243,7 @@ export default function Conversational() {
     fd.append("history", JSON.stringify(history || []));
 
     try {
-      const res = await fetch("http://localhost:5000/api/converse/submit_audio", {
+      const res = await fetch("https://karigaar-xhml.vercel.app/api/converse/submit_audio", {
         method: "POST",
         body: fd,
       });

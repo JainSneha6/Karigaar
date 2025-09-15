@@ -71,7 +71,7 @@ export default function MobileVideoEditor() {
 
   async function requestServerTTS(text) {
     try {
-      const res = await axios.post("http://localhost:5000/api/tts", { text });
+      const res = await axios.post("https://karigaar-xhml.vercel.app/api/tts", { text });
       return res.data; // expects { audio_base64, mime }
     } catch (err) {
       console.error("TTS request failed", err);
@@ -181,7 +181,7 @@ export default function MobileVideoEditor() {
     formData.append("user_prompt", fullPrompt);
 
     try {
-      const response = await fetch("http://localhost:5000/api/edit", {
+      const response = await fetch("https://karigaar-xhml.vercel.app/api/edit", {
         method: "POST",
         body: formData,
       });

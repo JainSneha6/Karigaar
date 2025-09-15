@@ -10,7 +10,7 @@ import AddProductSheet from "../components/AddProductSheet";
 import FloatingBackgroundBlobs from "../components/FloatingBackgroundBlobs";
 import HamburgerMenu from "../components/Hamburger";
 
-const API_BASE = "http://localhost:5000/api"; // adjust if backend hosted elsewhere
+const API_BASE = "https://karigaar-xhml.vercel.app/api"; // adjust if backend hosted elsewhere
 
 export default function ProductListings() {
   const { products, addProduct } = useContext(ProductContext);
