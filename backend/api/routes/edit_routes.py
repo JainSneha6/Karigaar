@@ -2,7 +2,7 @@ import os
 import tempfile
 from flask import Blueprint, request, send_file, current_app, jsonify
 from werkzeug.utils import secure_filename
-from video_edit.core import process_with_gemini
+from ..video_edit.core import process_with_gemini
 import requests
 import base64
 ELEVEN_API_KEY = 'sk_119a741c6b322f526f7e712be124a4007a04b3294734b78d'
