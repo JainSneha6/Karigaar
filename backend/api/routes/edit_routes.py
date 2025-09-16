@@ -44,24 +44,29 @@ def edit_video():
 
     Returns the edited video as an attachment (video/mp4) on success.
     """
+    print("Received /api/edit request")
     if "video" not in request.files:
         return jsonify({"error": "No 'video' file part"}), 400
 
+    print("Video file part found")
     vid_file = request.files["video"]
     if vid_file.filename == "":
         return jsonify({"error": "Empty filename"}), 400
-
+    
+    print(f"Uploaded filename: {vid_file.filename}")
     # Determine extension safely
     safe_name = secure_filename(vid_file.filename)
     ext = ".mp4"
     if "." in safe_name:
         ext = "." + safe_name.rsplit(".", 1)[-1]
 
+    print(f"Using file extension: {ext}")
     # create temp input path inside writable tmp dir
     input_tmp = make_tmp_file(suffix=ext)
     if not input_tmp:
         return jsonify({"error": "Failed to create temporary file for upload"}), 500
 
+    print(f"Saving uploaded file to temporary path: {input_tmp}")
     try:
         # Save uploaded file to the tmp path
         vid_file.save(input_tmp)
@@ -73,6 +78,7 @@ def edit_video():
             pass
         return jsonify({"error": f"Failed to save uploaded file: {e}"}), 500
 
+    print("File saved successfully")
     user_prompt = request.form.get("user_prompt", "").strip()
     if not user_prompt:
         try:
@@ -83,6 +89,7 @@ def edit_video():
         return jsonify({"error": "user_prompt must be provided."}), 400
 
     # Prefer GEMINI API key from env
+    print("Retrieving Google API key from environment")
     google_api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or "AIzaSyAVSGUozgbc7AQs4xEhP_-xaTGtN78HBFU"
     if not google_api_key:
         try:
@@ -93,6 +100,7 @@ def edit_video():
         return jsonify({"error": "GOOGLE_API_KEY not configured in environment."}), 500
 
     # Temporary output file inside tmp dir
+    print("Creating temporary output file")
     out_tmp = make_tmp_file(suffix=".mp4")
     if not out_tmp:
         try:
@@ -102,6 +110,7 @@ def edit_video():
             pass
         return jsonify({"error": "Failed to create temporary output file"}), 500
 
+    print(f"Processing video with prompt: {user_prompt}")
     try:
         # Ensure output directory exists (make_tmp_file will place file in tmp dir; parent exists)
         process_with_gemini(input_tmp, user_prompt, out_tmp, api_key=google_api_key)
