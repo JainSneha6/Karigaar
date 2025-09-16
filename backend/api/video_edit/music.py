@@ -6,6 +6,7 @@ import re
 import urllib.request
 import urllib.parse
 from typing import List, Dict, Any, Optional
+import shutil
 
 from .ffmpeg_utils import run_cmd, get_duration, make_tmp_file, get_tmp_dir
 from .sticker_helpers import ensure_dirs_exist

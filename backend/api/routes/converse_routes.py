@@ -446,7 +446,7 @@ def generate_profile_from_responses(file_path: str) -> str:
     slug_base = full_name or parsed.get("craft") or "artisan"
     slug = slugify(slug_base)
 
-    out_path = os.path.join(profiles_dir, f"{slug}.json")
+    out_path = os.path.join(profiles_dir, f"Profile.json")
     try:
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(final_profile, f, ensure_ascii=False, indent=2)

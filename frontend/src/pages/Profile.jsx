@@ -11,7 +11,7 @@ export default function Profile() {
   const [error, setError] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const effectiveSlug = slug || "Siddhartha";
+  const effectiveSlug = "Profile";
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -83,11 +83,11 @@ export default function Profile() {
                 <div className="w-28 h-28 md:w-32 md:h-32 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-3xl md:text-4xl font-semibold text-white shadow-xl ring-2 ring-white/20">
                   {profile["Full Name"]
                     ? profile["Full Name"]
-                        .split(" ")
-                        .map((n) => n[0])
-                        .slice(0, 2)
-                        .join("")
-                        .toUpperCase()
+                      .split(" ")
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()
                     : "A"}
                 </div>
               </div>

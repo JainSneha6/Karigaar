@@ -101,17 +101,17 @@ export default function Conversational() {
     if (audioCtxRef.current) {
       try {
         audioCtxRef.current.close();
-      } catch {}
+      } catch { }
       audioCtxRef.current = null;
     }
     try {
       if (sourceRef.current) sourceRef.current.disconnect();
       if (analyserRef.current) analyserRef.current.disconnect();
-    } catch {}
+    } catch { }
     if (mediaStreamRef.current) {
       try {
         mediaStreamRef.current.getTracks().forEach((t) => t.stop());
-      } catch {}
+      } catch { }
       mediaStreamRef.current = null;
     }
   }
@@ -195,7 +195,7 @@ export default function Conversational() {
     if (mr && (mr.state === "recording" || mr.state === "paused")) {
       try {
         mr.stop();
-      } catch {}
+      } catch { }
     } else {
       stopRecordingImmediate();
     }
@@ -207,7 +207,7 @@ export default function Conversational() {
       if (mediaRecorderRef.current?.state === "recording" || mediaRecorderRef.current?.state === "paused") {
         mediaRecorderRef.current.stop();
       }
-    } catch {}
+    } catch { }
     cleanupRecordingResources();
     mediaRecorderRef.current = null;
     recordedChunksRef.current = [];

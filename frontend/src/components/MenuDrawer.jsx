@@ -36,15 +36,7 @@ export default function MenuDrawer({ open, onClose }) {
                 User Profile
               </Link>
             </li>
-            <li>
-              <Link
-                to="/video-generation"
-                onClick={onClose}
-                className="block p-3 bg-white/80 backdrop-blur-sm rounded-2xl text-gray-900 text-sm border border-white/30 hover:bg-white"
-              >
-                Video Generation
-              </Link>
-            </li>
+
             <li>
               <Link
                 to="/video-editor"
@@ -54,24 +46,8 @@ export default function MenuDrawer({ open, onClose }) {
                 Video Editor
               </Link>
             </li>
-            <li>
-              <Link
-                to="/image-generation"
-                onClick={onClose}
-                className="block p-3 bg-white/80 backdrop-blur-sm rounded-2xl text-gray-900 text-sm border border-white/30 hover:bg-white"
-              >
-                Image Generation
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/image-editor"
-                onClick={onClose}
-                className="block p-3 bg-white/80 backdrop-blur-sm rounded-2xl text-gray-900 text-sm border border-white/30 hover:bg-white"
-              >
-                Image Editor
-              </Link>
-            </li>
+
+
             <li>
               <Link
                 to="/product-listing"
