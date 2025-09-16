@@ -8,7 +8,7 @@ from flask_cors import CORS
 def create_app():
     app = Flask(__name__)
     
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173"]}}, supports_credentials=True)
     # config: optional
     app.config.from_mapping({
     "MAX_CONTENT_LENGTH": 1024 * 1024 * 1024, # 1GB max upload by default
