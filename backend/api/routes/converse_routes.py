@@ -6,7 +6,6 @@ from flask import Blueprint, request, jsonify, current_app, send_from_directory
 import datetime
 from werkzeug.utils import secure_filename
 
-# attempt to import Gemini client if available
 try:
     import google.generativeai as genai  # optional
 except Exception:
