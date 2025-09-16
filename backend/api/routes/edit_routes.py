@@ -3,7 +3,6 @@ import requests
 import base64
 from flask import Blueprint, request, send_file, current_app, jsonify
 from werkzeug.utils import secure_filename
-
 from ..video_edit.core import process_with_gemini
 from ..video_edit.ffmpeg_utils import make_tmp_file, get_tmp_dir
 # add these imports near the top of your blueprint file
