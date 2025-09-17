@@ -12,7 +12,7 @@ import os
 from ..video_edit.music import mix_background_music, download_url_to_temp_audio
 
 # prefer reading API keys from env; fallback to existing literal if present
-ELEVEN_API_KEY = os.environ.get("ELEVEN_API_KEY", "sk_119a741c6b322f526f7e712be124a4007a04b3294734b78d")
+ELEVEN_API_KEY = os.environ.get("ELEVEN_API_KEY", "sk_b5b7b026323972fbcc9f9e83344f948f44eacccb9ecd33d6")
 DEFAULT_VOICE_ID = os.environ.get("DEFAULT_VOICE_ID", "KaCAGkAghyX8sFEYByRC")
 
 # ElevenLabs TTS base URL

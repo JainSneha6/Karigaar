@@ -17,7 +17,7 @@ conv_bp = Blueprint("converse", __name__)
 GEMINI_API_KEY = "AIzaSyAVSGUozgbc7AQs4xEhP_-xaTGtN78HBFU"
 GEMINI_MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.0-flash")
 
-ELEVENLABS_API_KEY = 'sk_119a741c6b322f526f7e712be124a4007a04b3294734b78d'
+ELEVENLABS_API_KEY = 'sk_b5b7b026323972fbcc9f9e83344f948f44eacccb9ecd33d6'
 ELEVEN_VOICE_ID = 'KaCAGkAghyX8sFEYByRC'
 
 ELEVEN_STT_URL = os.environ.get("ELEVEN_STT_URL", "https://api.elevenlabs.io/v1/speech-to-text")
