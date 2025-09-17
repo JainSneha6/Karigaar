@@ -413,7 +413,7 @@ export default function MobileVideoEditor() {
 
           <div style={{ marginTop: 12 }}>
             <SampleVideoDownloadPill
-              driveDownloadUrl={"https://drive.google.com/uc?export=download&id=1g3HGMPmRNKMCbPeV1xlo5XFUZDfyRIvs"}
+              driveDownloadUrl={"https://drive.google.com/uc?export=download&id=1W8AvdNeheerp1miHma6Ut-r40AL7dIGQ"}
               filename={"sample_video.mp4"}
             />
           </div>
